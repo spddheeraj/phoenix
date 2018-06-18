@@ -56,9 +56,15 @@ defmodule Phoenix.Transports.WebSocket do
   @doc false
   def init(%Plug.Conn{method: "GET"} = conn, {endpoint, handler, transport}) do
     {_, opts} = handler.__transport__(transport)
+    
+    headers = Keyword.get(opts, :headers, ~w[    forwarded    x-forwarded-for    x-client-ip    x-real-ip  ])
+    headers = MapSet.new(headers)
+    proxies = Keyword.get(opts, :proxies, []) ++ ~w[    127.0.0.0/8    ::1/128    fc00::/7    10.0.0.0/8    172.16.0.0/12    192.168.0.0/16  ]
+    proxies = proxies |> Enum.map(&InetCidr.parse/1)
 
     conn =
       conn
+      |> RemoteIp.call({headers, proxies})
       |> extract_remote_ip()
       |> code_reload(opts, endpoint)
       |> fetch_query_params()
@@ -83,35 +89,6 @@ defmodule Phoenix.Transports.WebSocket do
     end
   end
   
-  def clean_ip(maybe_quoted_ip) do
-    maybe_ip = maybe_quoted_ip |> String.strip(?") |> String.rstrip(?]) |> String.lstrip(?[)
-    case :inet_parse.address('#{maybe_ip}') do
-      {:ok,ip}->ip
-      _->nil
-    end
-  end
-  
-  def extract_remote_ip(conn) do
-    case get_req_header(conn,"x-forwarded-for") do
-      []->
-        case get_req_header(conn,"forwarded") do
-          []-> conn
-          [header|_]->
-            ips = for "for="<>quoted_ip<-String.split(header,~r/\s*,\s*/), ip=clean_ip(quoted_ip), !is_nil(ip), do: ip
-            case ips do
-              []->conn
-              [ip|_]->%{conn|remote_ip: ip}
-            end
-        end
-      [header|_]->
-        ips = for quoted_ip<-String.split(header,~r/\s*,\s*/), ip=clean_ip(quoted_ip), !is_nil(ip), do: ip
-        case ips do
-          []->conn
-          [ip|_]->%{conn|remote_ip: ip}
-        end
-    end
-  end
-
   def init(conn, _) do
     send_resp(conn, :bad_request, "")
     {:error, conn}
