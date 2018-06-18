@@ -48,7 +48,7 @@ defmodule Phoenix.Transports.WebSocket do
 
   ## Callbacks
 
-  import Plug.Conn, only: [fetch_query_params: 1, send_resp: 3]
+  import Plug.Conn, only: [fetch_query_params: 1, send_resp: 3, get_req_header: 2]
 
   alias Phoenix.Socket.Broadcast
   alias Phoenix.Socket.Transport
