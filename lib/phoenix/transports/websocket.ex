@@ -67,7 +67,7 @@ defmodule Phoenix.Transports.WebSocket do
 
     case conn do
       %{halted: false} = conn ->
-        params     = conn.params
+        params     = Map.put_new(conn.params, :remote_ip, conn.remote_ip |> :inet.ntoa() |> to_string())
         serializer = Keyword.fetch!(opts, :serializer)
 
         case Transport.connect(endpoint, handler, transport, __MODULE__, serializer, params) do
