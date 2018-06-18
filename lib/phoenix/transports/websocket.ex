@@ -65,7 +65,6 @@ defmodule Phoenix.Transports.WebSocket do
     conn =
       conn
       |> RemoteIp.call({headers, proxies})
-      |> extract_remote_ip()
       |> code_reload(opts, endpoint)
       |> fetch_query_params()
       |> Transport.transport_log(opts[:transport_log])
