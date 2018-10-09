@@ -61,6 +61,8 @@ defmodule Phoenix.Transports.WebSocket do
     headers = MapSet.new(headers)
     proxies = Keyword.get(opts, :proxies, []) ++ ~w[    127.0.0.0/8    ::1/128    fc00::/7    10.0.0.0/8    172.16.0.0/12    192.168.0.0/16  ]
     proxies = proxies |> Enum.map(&InetCidr.parse/1)
+    
+    Logger.debug "headers #{inspect headers}"
 
     conn =
       conn
